@@ -1,6 +1,21 @@
-import blockContent from './blockContent'
-import category from './category'
-import post from './post'
-import author from './author'
+import heroSection from './heroSection'
+import pricingPlan from './pricingPlan'
+import feature from './feature'
+import aboutSection from './aboutSection'
+import testimonial from './testimonial'
+import contactSection from './contactSection'
+import service from './service'
+import siteSettings from './siteSettings'
+import faq from './faq'
 
-export const schemaTypes = [post, author, category, blockContent]
+export const schemaTypes = [
+  siteSettings,
+  heroSection,
+  aboutSection,
+  service,
+  feature,
+  pricingPlan,
+  testimonial,
+  faq,
+  contactSection
+]
