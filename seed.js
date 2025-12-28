@@ -170,20 +170,117 @@ const seedData = async () => {
   ]
 
   try {
-    // Check if data already exists
+    // Check if pricing data already exists
     const existingPlans = await client.fetch('*[_type == "pricingPlan"]')
-    if (existingPlans.length > 0) {
-      return
+    if (existingPlans.length === 0) {
+       // Create all pricing plans
+      const allPlans = [...modules, ...plans]
+      console.log('Seeding pricing plans...')
+      for (const plan of allPlans) {
+        await client.create(plan)
+      }
+      console.log('Pricing plans seeded.')
     }
 
-    // Create all pricing plans
-    const allPlans = [...modules, ...plans]
+    // --- Hero Section Seeding ---
+    console.log('Seeding Hero Section...')
+    
+    // 1. Delete existing heroSection
+    await client.delete({query: '*[_type == "heroSection"]'})
+    console.log('Deleted existing heroSection.')
 
-    for (const plan of allPlans) {
-      await client.create(plan)
+    // 2. Prepare Hero Data
+    const slidesData = [
+      {
+        title: 'Pharmacy Dashboard',
+        description: 'Real-time inventory tracking, automated reordering, and AI-powered demand forecasting',
+        imageUrl: 'https://images.pexels.com/photos/3807517/pexels-photo-3807517.jpeg?auto=compress&cs=tinysrgb&w=1200&h=675&fit=crop',
+      },
+      {
+        title: 'Hospital Management',
+        description: 'Unified patient records, bed management, and integrated billing across departments',
+        imageUrl: 'https://images.pexels.com/photos/7974/pexels-photo.jpg?auto=compress&cs=tinysrgb&w=1200&h=675&fit=crop',
+      },
+      {
+        title: 'Reception & Queue',
+        description: 'Smart appointment scheduling with AI-powered queue optimization and patient flow',
+        imageUrl: 'https://images.pexels.com/photos/5632399/pexels-photo-5632399.jpeg?auto=compress&cs=tinysrgb&w=1200&h=675&fit=crop',
+      },
+      {
+        title: 'Lab Analytics',
+        description: 'Automated test tracking, result processing, and quality assurance dashboards',
+        imageUrl: 'https://images.pexels.com/photos/3825517/pexels-photo-3825517.jpeg?auto=compress&cs=tinysrgb&w=1200&h=675&fit=crop',
+      },
+    ]
+
+    // 3. Helper to upload image from URL
+    const uploadImage = async (url) => {
+      try {
+        const response = await fetch(url)
+        if (!response.ok) throw new Error(`Failed to fetch ${url}`)
+        const arrayBuffer = await response.arrayBuffer()
+        const buffer = Buffer.from(arrayBuffer)
+        const asset = await client.assets.upload('image', buffer, {
+          filename: url.split('/').pop()?.split('?')[0] || 'image.jpg'
+        })
+        return asset._id
+      } catch (error) {
+        console.error('Error uploading image:', url, error)
+        return null
+      }
     }
-  } catch {
-    // Silent error handling
+
+    // 4. Process slides with image uploads
+    const processedSlides = []
+    for (const slide of slidesData) {
+      console.log(`Uploading image for slide: ${slide.title}...`)
+      const assetId = await uploadImage(slide.imageUrl)
+      
+      if (assetId) {
+        processedSlides.push({
+          _key: Math.random().toString(36).substring(7),
+          title: slide.title,
+          description: slide.description,
+          image: {
+            _type: 'image',
+            asset: {
+              _type: 'reference',
+              _ref: assetId
+            }
+          }
+        })
+      }
+    }
+
+    // 5. Create Hero Document
+    const heroDoc = {
+      _type: 'heroSection',
+      title: 'Real Healthcare Control.',
+      subtitle: 'Real Time.',
+      description: 'Unified pharmacy and hospital management with native AI intelligence. See your entire operation in real-time dashboards. Built for Indian regulations, designed for global scale.',
+      isActive: true,
+      ctaButtons: [
+        {
+          _key: 'btn1',
+          text: 'Request Demo',
+          link: '#demo', // Placeholder link
+          variant: 'primary'
+        },
+        {
+          _key: 'btn2',
+          text: 'See Dashboard',
+          link: '#dashboard',
+          variant: 'secondary'
+        }
+      ],
+      slides: processedSlides
+    }
+
+    await client.create(heroDoc)
+    console.log('Hero Section seeded successfully!')
+
+  } catch (err) {
+    console.error('Seeding failed:', err)
   }
 }
 
