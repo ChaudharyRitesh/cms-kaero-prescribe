@@ -6,6 +6,12 @@ export default defineType({
   type: 'document',
   fields: [
     defineField({
+      name: 'tagline',
+      title: 'Tagline',
+      type: 'string',
+      validation: Rule => Rule.required()
+    }),
+    defineField({
       name: 'title',
       title: 'Main Title',
       type: 'string',
